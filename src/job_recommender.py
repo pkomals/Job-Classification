@@ -39,11 +39,15 @@ class JobRecommender:
     
     def _fit_vectorizers(self):
         """Fit vectorizers on the job listings data"""
-        # Fit skills vectorizer
-        self.skills_vectorizer.fit(self.job_listings_df['skills'].fillna(''))
+        # Preprocess and fit skills vectorizer
+        skills_data = self.job_listings_df['skills'].fillna('').apply(self.preprocess_text)
+        self.skills_vectorizer.fit(skills_data)
         
-        # Fit description vectorizer
-        self.desc_vectorizer.fit(self.job_listings_df['Job Description'].fillna(''))
+        # Preprocess and fit description vectorizer
+        desc_data = self.job_listings_df['Job Description'].fillna('').apply(self.preprocess_text)
+        self.desc_vectorizer.fit(desc_data)
+        
+        print("Vectorizers fitted successfully!")
     
     def preprocess_text(self, text):
         """Preprocess text for vectorization"""
@@ -103,6 +107,7 @@ class JobRecommender:
                     'skills': str,  # Comma-separated list of skills
                     'education': str,  # Education level
                     'experience': str,  # Experience range
+                    'preferred_location': str,  # Optional
                     'preferred_industry': str  # Optional
                 }
             top_n (int): Number of top recommendations to return
@@ -114,10 +119,13 @@ class JobRecommender:
                     'company': str,
                     'job_description': str,
                     'required_skills': str,
+                    'location': str,
+                    'salary': str,
                     'matching_score': float,
                     'skill_match_score': float,
                     'education_match_score': float,
                     'experience_match_score': float,
+                    'location_match_score': float,
                     'category_match_score': float
                 }]
         """
@@ -153,21 +161,26 @@ class JobRecommender:
                 job['Experience']
             )
             
+            # Calculate location match score
+            loc_match = 1.0 if 'preferred_location' in user_profile and user_profile['preferred_location'] == job['Location'] else 0.0
+            
             # Calculate category match score
             cat_match = 1.0 if 'preferred_industry' in user_profile and user_profile['preferred_industry'] == job['Category'] else 0.0
             
             # Calculate overall matching score with weights
             weights = {
-                'skill': 0.45,  # Increased from 0.35
-                'education': 0.20,  # Increased from 0.15
-                'experience': 0.20,  # Increased from 0.15
-                'category': 0.15  # Decreased from 0.20
+                'skill': 0.35,
+                'education': 0.15,
+                'experience': 0.15,
+                'location': 0.15,
+                'category': 0.20
             }
             
             matching_score = (
                 weights['skill'] * skill_match +
                 weights['education'] * edu_match +
                 weights['experience'] * exp_match +
+                weights['location'] * loc_match +
                 weights['category'] * cat_match
             )
             
@@ -176,10 +189,13 @@ class JobRecommender:
                 'company': job['Company'],
                 'job_description': job['Job Description'],
                 'required_skills': job['skills'],
+                'location': job['Location'],
+                'salary': job['Salary'],
                 'matching_score': matching_score,
                 'skill_match_score': skill_match,
                 'education_match_score': edu_match,
                 'experience_match_score': exp_match,
+                'location_match_score': loc_match,
                 'category_match_score': cat_match
             })
         
@@ -196,26 +212,18 @@ def main():
         'skills': "Python, Machine Learning, Data Analysis, SQL, Tableau",
         'education': "Master's Degree",
         'experience': "2-5 years",
+        'preferred_location': "New York, NY",
         'preferred_industry': "Data Science"
     }
-    
-    # Print input user profile
-    print("\nInput User Profile:")
-    print("=" * 80)
-    print(f"Skills: {user_profile['skills']}")
-    print(f"Education: {user_profile['education']}")
-    print(f"Experience: {user_profile['experience']}")
-    print(f"Preferred Industry: {user_profile['preferred_industry']}")
-    print("=" * 80)
     
     # Get recommendations
     recommendations = recommender.get_job_recommendations(user_profile)
     
-    # Print recommendations
+    # Print recommendations in a cleaner format
     print("\nTop Job Recommendations:")
     print("=" * 80)
     for i, rec in enumerate(recommendations, 1):
-        print(f"\nRecommendation {i}")
+        print(f"\nRecommendation {i} (Matching Score: {rec['matching_score']:.2f})")
         print("-" * 80)
         print(f"Title: {rec['job_title']}")
         print("\nDescription:")

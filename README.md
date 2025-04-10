@@ -66,5 +66,5 @@ To recommend jobs to users based on their profile information(Content base filte
 - **Job Listings**: job title, description, required skills
 
 ### Output
-- Recommended job titles
+- Recommended 5 job titles based on user profile.
 

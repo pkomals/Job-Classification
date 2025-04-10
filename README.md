@@ -4,7 +4,8 @@ This project focuses on building a machine learning pipeline to classify job pos
 ## Phase 1: Job Classification
 
 ### Dataset
-- A [dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset/data) containing job titles and descriptions.
+- The dataset used for this project is publicly available on Kaggle:  
+[Job Description Dataset](https://www.kaggle.com/datasets/ravindrasinghrana/job-description-dataset/data).
 - Imbalanced data with 147 unique job titles.
 
 ### Workflow
